@@ -1,18 +1,18 @@
 #' ---
 #' title: "Replication: Orbital Eccentricity-Multiplicity Relation"
 #' author: "Richard Dallaway"
-#' 
+#' output: 
+#'  html_document:
+#'    toc: true
+#'    toc_depth: 2
 #' ---
-#' 
 
-
-#' Summary
-#' -------
+#' Introduction
+#' ------------
 #' 
 #' (text to go here)
 
 
-# install.packages("plyr") 
 require(plyr)
 
 #' The Dataset
@@ -22,7 +22,8 @@ require(plyr)
 
 planets.all <- read.csv("data/exoplanets.1392162267.csv")
 
-#' A summary of the discovery methods in this dataset:
+#' A summary of the discovery methods in this dataset. 
+#' (why so many rows with no discovery method?)
 table(planets.all$PLANETDISCMETH)
 
 #' > "We chose to use RV data only for our analysis since the planets in that data set  typically have known and relatively reliably measured eccentricities."
@@ -31,8 +32,8 @@ table(planets.all$PLANETDISCMETH)
 
 #' > "If the eccentricity of the planet was not listed or if it was given as zero, the exoplanet was excluded from our sample."
 
-planets.selected  <-subset(planets.all,  PLANETDISCMETH == "RV" & ECC != 0.0)
-cat("Planets in selected dataset:    ", nrow(planets.selected))  # Expecting 403
+planets.selected <- subset(planets.all,  PLANETDISCMETH == "RV" & ECC != 0.0)
+cat("Planets in selected dataset: ", nrow(planets.selected))  # Expecting 403
 
 #' Data for the Solar System.
 #' Source:   http://en.wikipedia.org/wiki/List_of_gravitationally_rounded_objects_of_the_Solar_System#Planets
@@ -51,15 +52,25 @@ planets.selected <- rbind.fill(planets.selected, mercury, venus, earth, mars, ju
 
 #' > "The 5- and 6-planet systems, one of each, were combined into one bin so that there was sufficient data for a statical analysis."
 
-#' Apply the bins to the data as a new multiplicity factor column:
+#' Apply the bins to the data as a new multiplicity factor column (called `mfactor`):
 planets.selected$mfactor <- cut(planets.selected$NCOMP, 
     breaks=c(0,1,2,3,4,6,7,8), 
     labels=c("1 Planet", "2 Planets", "3 Planets", "4 Planets", "5 or 6 Planets", "7 Planets", "8 Planets")
 )
 
-
-
 #' Table 1: No. planets in dataset for given multiplicity
-aggregate(STAR~mfactor,planets.selected,FUN="length")
+setNames(
+  aggregate(STAR~mfactor,planets.selected,FUN="length"),
+  c("Multiplicity", "Total number of planets with given multiplicity")
+)
+
+
+#' A Trend in Multiplicity versus Eccentricity
+#' -------------------------------------------
+#' 
+
+eight <- subset(planets.selected, mfactor == "8 Planets", select = c(ECC))
+e <- ecdf(eight$ECC)
+plot(e, xlim=c(10^-3,1), log="x", verticals = TRUE)
 
 
