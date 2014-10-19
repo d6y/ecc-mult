@@ -13,7 +13,11 @@
 #' (text to go here)
 
 
-require(plyr)
+# install.packages("plyr")
+# install.packages("Hmisc")
+
+library(plyr)
+library(Hmisc)
 
 #' The Dataset
 #' -----------
@@ -32,7 +36,7 @@ table(planets.all$PLANETDISCMETH)
 
 #' > "If the eccentricity of the planet was not listed or if it was given as zero, the exoplanet was excluded from our sample."
 
-planets.selected <- subset(planets.all,  PLANETDISCMETH == "RV" & ECC != 0.0)
+planets.selected <- subset(planets.all, PLANETDISCMETH == "RV" & ECC != 0.0)
 cat("Planets in selected dataset: ", nrow(planets.selected))  # Expecting 403
 
 #' Data for the Solar System.
@@ -61,7 +65,7 @@ planets.selected$mfactor <- cut(planets.selected$NCOMP,
 #' Table 1: No. planets in dataset for given multiplicity
 setNames(
   aggregate(STAR~mfactor,planets.selected,FUN="length"),
-  c("Multiplicity", "Total number of planets with given multiplicity")
+  c("Multiplicity", "Total number of planets")
 )
 
 
@@ -69,8 +73,6 @@ setNames(
 #' -------------------------------------------
 #' 
 
-eight <- subset(planets.selected, mfactor == "8 Planets", select = c(ECC))
-e <- ecdf(eight$ECC)
-plot(e, xlim=c(10^-3,1), log="x", verticals = TRUE)
-
-
+eccs <- planets.selected[, c("mfactor", "ECC")]
+Ecdf(eccs$ECC, group=eccs$mfactor, log="x", xlim=c(10^-3,1))
+legend("topleft", legend=levels(eccs$mfactor), inset=0.05, lty=c(1,2,3,4,5,6,7,8))
