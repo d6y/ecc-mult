@@ -5,6 +5,8 @@
 #'  html_document:
 #'    toc: true
 #'    toc_depth: 2
+#'    fig_width: 9
+#'    fig_height: 7 
 #' ---
 
 #' Introduction
@@ -18,6 +20,8 @@
 
 library(plyr)
 library(Hmisc)
+library(lattice)
+library(ggplot2)
 
 #' The Dataset
 #' -----------
@@ -40,16 +44,24 @@ planets.selected <- subset(planets.all, PLANETDISCMETH == "RV" & ECC != 0.0)
 cat("Planets in selected dataset: ", nrow(planets.selected))  # Expecting 403
 
 #' Data for the Solar System.
-#' Source:   http://en.wikipedia.org/wiki/List_of_gravitationally_rounded_objects_of_the_Solar_System#Planets
-#' (accessed: 2014-08-31)
-mercury <- data.frame(STAR="Sun", ECC=0.20563069, NCOMP=8) 
-venus   <- data.frame(STAR="Sun", ECC=0.00677323, NCOMP=8)
-earth   <- data.frame(STAR="Sun", ECC=0.01671022, NCOMP=8)
-mars    <- data.frame(STAR="Sun", ECC=0.09341233, NCOMP=8)
-jupiter <- data.frame(STAR="Sun", ECC=0.04839266, NCOMP=8)
-saturn  <- data.frame(STAR="Sun", ECC=0.05415060, NCOMP=8)
-uranus  <- data.frame(STAR="Sun", ECC=0.04716771, NCOMP=8)
-neptune <- data.frame(STAR="Sun", ECC=0.00858587, NCOMP=8)
+#' Sources:   
+#'  * http://solarsystem.nasa.gov/planets/profile.cfm?Object=Mercury&Display=Facts&System=Metric
+#'  * http://solarsystem.nasa.gov/planets/profile.cfm?Object=Venus&Display=Facts&System=Metric
+#'  * http://solarsystem.nasa.gov/planets/profile.cfm?Object=Earth&Display=Facts&System=Metric
+#'  * http://solarsystem.nasa.gov/planets/profile.cfm?Object=Mars&Display=Facts&System=Metric
+#'  * http://solarsystem.nasa.gov/planets/profile.cfm?Object=Jupiter&Display=Facts&System=Metric
+#'  * http://solarsystem.nasa.gov/planets/profile.cfm?Object=Saturn&Display=Facts&System=Metric
+#'  * http://solarsystem.nasa.gov/planets/profile.cfm?Object=Uranus&Display=Facts&System=Metric
+#'  * http://solarsystem.nasa.gov/planets/profile.cfm?Object=Neptune&Display=Facts&System=Metric
+#' (accessed: 2014-10-21)
+mercury <- data.frame(STAR="Sun", ECC=0.20563593, A=0.38709927, NCOMP=8) 
+venus   <- data.frame(STAR="Sun", ECC=0.00677672, A=0.72333566, NCOMP=8)
+earth   <- data.frame(STAR="Sun", ECC=0.01671123, A=1.0,        NCOMP=8)
+mars    <- data.frame(STAR="Sun", ECC=0.0933941,  A=1.523662,   NCOMP=8)
+jupiter <- data.frame(STAR="Sun", ECC=0.04838624, A=5.2028870,  NCOMP=8)
+saturn  <- data.frame(STAR="Sun", ECC=0.05386179, A=9.53667594, NCOMP=8)
+uranus  <- data.frame(STAR="Sun", ECC=0.04725744, A=19.189165,  NCOMP=8)
+neptune <- data.frame(STAR="Sun", ECC=0.00859048, A=30.069923,  NCOMP=8)
 
 #' Append Solar System to the selected data set:
 planets.selected <- rbind.fill(planets.selected, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune)
@@ -74,5 +86,49 @@ setNames(
 #' 
 
 eccs <- planets.selected[, c("mfactor", "ECC")]
-Ecdf(eccs$ECC, group=eccs$mfactor, log="x", xlim=c(10^-3,1))
-legend("topleft", legend=levels(eccs$mfactor), inset=0.05, lty=c(1,2,3,4,5,6,7,8))
+
+# See `?par` for a description formatting parameters such as `xaxs` and `las`
+Ecdf(eccs$ECC, group=eccs$mfactor, 
+     log          = "x", 
+     xlim         = c(10^-3,1), 
+     ylim         = c(0,1), 
+     subtitle     = FALSE, 
+     label.curves = FALSE,
+     xlab         = "Eccentricity",
+     ylab         = "Cumulative Distribution Function (CDF)",
+     xaxs = "i", yaxs = "i", las = "1",
+     lty = c("longdash", "solid"),
+     col = c("blue", "green", "red", "cyan", "purple", "black"))
+
+# The call to `factor` avoids plotting factors that do not occur in the data set. I.e, "7 planets"
+legend("topleft", legend=levels(factor(eccs$mfactor)), 
+    inset = 0.05, bty = "n",
+    lty   = c("longdash", "solid"),
+    col   = c("blue", "green", "red", "cyan", "purple", "black"))
+
+#' **Fig. 1.** "Cumulative eccentricity distributions in RV exoplanet systems and the Solar
+#' System for various multiplicities. There is a trend towards lower eccentricities at
+#' higher multiplicities."
+
+xyplot(ECC ~ A | mfactor, planets.selected, 
+  xlim   = c(10^-2,10^2),
+  scales = list(x=list(alternating=FALSE,log=TRUE)),
+  ylab   = "Eccentricity", xlab="Sem-major Axis (AU)",
+  layout = c(7,1),
+  drop.unused.levels = TRUE 
+)
+
+#' **Fig. 2.** "Eccentricity verses semi-major axis going from low- (left) to high-multiplicity (right)"
+
+
+df <- ddply(
+  planets.selected, c("mfactor"), 
+  summarise, 
+  N    = length(ECC), 
+  mean = mean(ECC), 
+  sd   = sd(ECC)
+)
+
+ggplot()
+
+
