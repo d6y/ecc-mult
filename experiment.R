@@ -22,6 +22,7 @@ library(plyr)
 library(Hmisc)
 library(lattice)
 library(ggplot2)
+library(boot)
 
 #' The Dataset
 #' -----------
@@ -43,17 +44,7 @@ table(planets.all$PLANETDISCMETH)
 planets.selected <- subset(planets.all, PLANETDISCMETH == "RV" & ECC != 0.0)
 cat("Planets in selected dataset: ", nrow(planets.selected))  # Expecting 403
 
-#' Data for the Solar System.
-#' Sources:   
-#'  * http://solarsystem.nasa.gov/planets/profile.cfm?Object=Mercury&Display=Facts&System=Metric
-#'  * http://solarsystem.nasa.gov/planets/profile.cfm?Object=Venus&Display=Facts&System=Metric
-#'  * http://solarsystem.nasa.gov/planets/profile.cfm?Object=Earth&Display=Facts&System=Metric
-#'  * http://solarsystem.nasa.gov/planets/profile.cfm?Object=Mars&Display=Facts&System=Metric
-#'  * http://solarsystem.nasa.gov/planets/profile.cfm?Object=Jupiter&Display=Facts&System=Metric
-#'  * http://solarsystem.nasa.gov/planets/profile.cfm?Object=Saturn&Display=Facts&System=Metric
-#'  * http://solarsystem.nasa.gov/planets/profile.cfm?Object=Uranus&Display=Facts&System=Metric
-#'  * http://solarsystem.nasa.gov/planets/profile.cfm?Object=Neptune&Display=Facts&System=Metric
-#' (accessed: 2014-10-21)
+#' Data for the Solar System (see _References_ for sources):
 mercury <- data.frame(STAR="Sun", ECC=0.20563593, A=0.38709927, NCOMP=8) 
 venus   <- data.frame(STAR="Sun", ECC=0.00677672, A=0.72333566, NCOMP=8)
 earth   <- data.frame(STAR="Sun", ECC=0.01671123, A=1.0,        NCOMP=8)
@@ -113,22 +104,47 @@ legend("topleft", legend=levels(factor(eccs$mfactor)),
 xyplot(ECC ~ A | mfactor, planets.selected, 
   xlim   = c(10^-2,10^2),
   scales = list(x=list(alternating=FALSE,log=TRUE)),
-  ylab   = "Eccentricity", xlab="Sem-major Axis (AU)",
+  ylab   = "Eccentricity", 
+  xlab   = "Sem-major Axis (AU)",
   layout = c(7,1),
   drop.unused.levels = TRUE 
 )
 
 #' **Fig. 2.** "Eccentricity verses semi-major axis going from low- (left) to high-multiplicity (right)"
 
+# For plots, it is useful to have 5.5 for "5-6 Planets". This will be `$numplanets`
+planets.selected$numplanetsFactor <- cut(planets.selected$NCOMP, 
+   breaks=c(0,1,2,3,4,6,7,8), 
+   labels=c(1,2,3,4,5.5,7,8)
+)
+planets.selected$numplanets <- as.numeric(as.character(planets.selected$numplanetsFactor))
 
-df <- ddply(
-  planets.selected, c("mfactor"), 
+summary <- ddply(
+  planets.selected, c("numplanets"), 
   summarise, 
   N    = length(ECC), 
-  mean = mean(ECC), 
-  sd   = sd(ECC)
+  mean = mean(ECC),
+  median = median(ECC)
 )
 
-ggplot()
+# Uncertainties in the mean and median 
+# boot(planets.selected, statistic=function(d,i){mean(d$ECC[i])},R=1000)
+# foo <- subset(eccs, mfactor %in% c("8 Planets"))
+
+plot(summary$numplanets, summary$mean, log="xy", ylim=c(0.03,0.3), type="b")
+
+#' References
+#' ----------
+#' 
+#' * [Mercury, SSE Facts & Figures, NASA](http://solarsystem.nasa.gov/planets/profile.cfm?Object=Mercury&Display=Facts&System=Metric), accessed: 2014-10-21.
+#' * [Venus, SSE Facts & Figures, NASA](http://solarsystem.nasa.gov/planets/profile.cfm?Object=Venus&Display=Facts&System=Metric), accessed: 2014-10-21.
+#' * [Earth, SSE Facts & Figures, NASA](http://solarsystem.nasa.gov/planets/profile.cfm?Object=Earth&Display=Facts&System=Metric), accessed: 2014-10-21.
+#' * [Mars, SSE Facts & Figures, NASA](http://solarsystem.nasa.gov/planets/profile.cfm?Object=Mars&Display=Facts&System=Metric), accessed: 2014-10-21.
+#' * [Jupiter, SSE Facts & Figures, NASA](http://solarsystem.nasa.gov/planets/profile.cfm?Object=Jupiter&Display=Facts&System=Metric), accessed: 2014-10-21.
+#' * [Saturn, SSE Facts & Figures, NASA](http://solarsystem.nasa.gov/planets/profile.cfm?Object=Saturn&Display=Facts&System=Metric), accessed: 2014-10-21.
+#' * [Uranus, SSE Facts & Figures, NASA](http://solarsystem.nasa.gov/planets/profile.cfm?Object=Uranus&Display=Facts&System=Metric), accessed: 2014-10-21.
+#' * [Neptune, SSE Facts & Figures, NASA](http://solarsystem.nasa.gov/planets/profile.cfm?Object=Neptune&Display=Facts&System=Metric), accessed: 2014-10-21.
+#' 
+
 
 
