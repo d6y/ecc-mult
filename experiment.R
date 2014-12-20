@@ -9,14 +9,14 @@
 #'    fig_height: 7 
 #' ---
 
+# install.packages("plyr")
+# install.packages("Hmisc")
+
 #' Introduction
 #' ------------
 #' 
-#' (text to go here)
+#' TODO
 
-
-# install.packages("plyr")
-# install.packages("Hmisc")
 
 library(plyr)
 library(Hmisc)
@@ -27,7 +27,6 @@ library(boot)
 #' The Dataset
 #' -----------
 #' 
-#' (text to go here)
 
 planets.all <- read.csv("data/exoplanets.1392162267.csv")
 
@@ -65,12 +64,19 @@ planets.selected$mfactor <- cut(planets.selected$NCOMP,
     labels=c("1 Planet", "2 Planets", "3 Planets", "4 Planets", "5 or 6 Planets", "7 Planets", "8 Planets")
 )
 
+# For plots, it is useful to have 5.5 for "5-6 Planets". This will be `$numplanets`
+planets.selected$numplanetsFactor <- cut(planets.selected$NCOMP, 
+     breaks=c(0,1,2,3,4,6,7,8), 
+     labels=c(1,2,3,4,5.5,7,8)
+)
+planets.selected$numplanets <- as.numeric(as.character(planets.selected$numplanetsFactor))
+
+
 #' Table 1: No. planets in dataset for given multiplicity
 setNames(
   aggregate(STAR~mfactor,planets.selected,FUN="length"),
   c("Multiplicity", "Total number of planets")
 )
-
 
 #' A Trend in Multiplicity versus Eccentricity
 #' -------------------------------------------
@@ -96,10 +102,7 @@ legend("topleft", legend=levels(factor(eccs$mfactor)),
     inset = 0.05, bty = "n",
     lty   = c("longdash", "solid"),
     col   = c("blue", "green", "red", "cyan", "purple", "black"))
-
-#' **Fig. 1.** "Cumulative eccentricity distributions in RV exoplanet systems and the Solar
-#' System for various multiplicities. There is a trend towards lower eccentricities at
-#' higher multiplicities."
+title("Fig. 1: Cumulative eccentricity distributions, by multiplicity")
 
 xyplot(ECC ~ A | mfactor, planets.selected, 
   xlim   = c(10^-2,10^2),
@@ -107,19 +110,11 @@ xyplot(ECC ~ A | mfactor, planets.selected,
   ylab   = "Eccentricity", 
   xlab   = "Sem-major Axis (AU)",
   layout = c(7,1),
-  drop.unused.levels = TRUE 
+  drop.unused.levels = TRUE, 
+  main   = "Fig. 2: 'Eccentricity verses semi-major axis going from low- (left) to high-multiplicity (right)'"
 )
 
-#' **Fig. 2.** "Eccentricity verses semi-major axis going from low- (left) to high-multiplicity (right)"
-
-# For plots, it is useful to have 5.5 for "5-6 Planets". This will be `$numplanets`
-planets.selected$numplanetsFactor <- cut(planets.selected$NCOMP, 
-   breaks=c(0,1,2,3,4,6,7,8), 
-   labels=c(1,2,3,4,5.5,7,8)
-)
-planets.selected$numplanets <- as.numeric(as.character(planets.selected$numplanetsFactor))
-
-summary <- ddply(
+summaryStats <- ddply(
   planets.selected, c("numplanets"), 
   summarise, 
   N    = length(ECC), 
@@ -127,11 +122,21 @@ summary <- ddply(
   median = median(ECC)
 )
 
-# Uncertainties in the mean and median 
+
 # boot(planets.selected, statistic=function(d,i){mean(d$ECC[i])},R=1000)
 # foo <- subset(eccs, mfactor %in% c("8 Planets"))
 
-plot(summary$numplanets, summary$mean, log="xy", ylim=c(0.03,0.3), type="b")
+plot(summaryStats$numplanets, summaryStats$mean, log="xy", xlab="Number of planets", ylab="Eccentricity", ylim=c(0.03,0.3), yaxs="i", type="b", pch=5, col="blue")
+points(summaryStats$numplanets, summaryStats$median, type="b", col="red", lty="longdash")
+grid()
+legend(x=4.5, y=0.25,
+  legend=c("Mean Eccentricity","Median Eccentricity"),
+  lty=c("solid","longdash"),
+  col=c("blue","red"),
+  pch=c(5,1),
+  box.col=NA
+)
+title("Fig. 3: Mean and median RV eccentricity by multiplicity (number of planets)")
 
 #' References
 #' ----------
