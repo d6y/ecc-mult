@@ -117,23 +117,23 @@ xyplot(ECC ~ A | mfactor, planets.selected,
 summaryStats <- ddply(
   planets.selected, c("numplanets"), 
   summarise, 
-  N    = length(ECC), 
-  mean = mean(ECC),
-  median = median(ECC)
+  N         = length(ECC), 
+  mean      = mean(ECC),
+  median    = median(ECC),
+  meanboot  = boot.ci(
+    boot(ECC, statistic = function(d,i) { mean(d[i]) }, R=1000), type="norm", conf=c(0.5) 
+    )$normal
 )
 
-
-# boot(planets.selected, statistic=function(d,i){mean(d$ECC[i])},R=1000)
-# foo <- subset(eccs, mfactor %in% c("8 Planets"))
-
 plot(summaryStats$numplanets, summaryStats$mean, log="xy", xlab="Number of planets", ylab="Eccentricity", ylim=c(0.03,0.3), yaxs="i", type="b", pch=5, col="blue")
+errbar(x=summaryStats$numplanets, y=summaryStats$mean, yminus=summaryStats$meanboot[,2], yplus=summaryStats$meanboot[,3], add=TRUE)
 points(summaryStats$numplanets, summaryStats$median, type="b", col="red", lty="longdash")
 grid()
-legend(x=4.5, y=0.25,
-  legend=c("Mean Eccentricity","Median Eccentricity"),
-  lty=c("solid","longdash"),
-  col=c("blue","red"),
-  pch=c(5,1),
+legend(x=4.25, y=0.25,
+  legend = c("Mean Eccentricity", "Median Eccentricity"),
+  lty    = c("solid","longdash"),
+  col    = c("blue","red"),
+  pch    = c(5,1),
   box.col=NA
 )
 title("Fig. 3: Mean and median RV eccentricity by multiplicity (number of planets)")
