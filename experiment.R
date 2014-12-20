@@ -71,7 +71,6 @@ planets.selected$numplanetsFactor <- cut(planets.selected$NCOMP,
 )
 planets.selected$numplanets <- as.numeric(as.character(planets.selected$numplanetsFactor))
 
-
 #' Table 1: No. planets in dataset for given multiplicity
 setNames(
   aggregate(STAR~mfactor,planets.selected,FUN="length"),
@@ -93,9 +92,9 @@ Ecdf(eccs$ECC, group=eccs$mfactor,
      label.curves = FALSE,
      xlab         = "Eccentricity",
      ylab         = "Cumulative Distribution Function (CDF)",
-     xaxs = "i", yaxs = "i", las = "1",
-     lty = c("longdash", "solid"),
-     col = c("blue", "green", "red", "cyan", "purple", "black"))
+     xaxs         = "i", yaxs = "i", las = "1",
+     lty          = c("longdash", "solid"),
+     col          = c("blue", "green", "red", "cyan", "purple", "black"))
 
 # The call to `factor` avoids plotting factors that do not occur in the data set. I.e, "7 planets"
 legend("topleft", legend=levels(factor(eccs$mfactor)), 
