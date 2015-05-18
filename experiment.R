@@ -113,22 +113,52 @@ xyplot(ECC ~ A | mfactor, planets.selected,
   main   = "Fig. 2: 'Eccentricity verses semi-major axis going from low- (left) to high-multiplicity (right)'"
 )
 
+
+#  The uncertainties in the medians correspond to the one-third and two-thirds points in the distributions
+# shown in \fig{FracObjEcc} divided by $\sqrt{N-1}$, where $N$ is the number of points in the multiplicity bin.
+
+# Type = 1 is the "Inverse of empirical distribution function"
+
+
 summaryStats <- ddply(
   planets.selected, c("numplanets"), 
   summarise, 
   N         = length(ECC), 
   mean      = mean(ECC),
   median    = median(ECC),
+  oneThird  = (median - quantile(ECC, c(1/3), type=1)) / sqrt(N-1),
+  twoThirds = (quantile(ECC, c(2/3), type=1) - median) / sqrt(N-1),
   meanboot  = boot.ci(
     boot(ECC, statistic = function(d,i) { mean(d[i]) }, R=1000), type="norm", conf=c(0.5) 
     )$normal
 )
 
-plot(summaryStats$numplanets, summaryStats$mean, log="xy", xlab="Number of planets", ylab="Eccentricity", ylim=c(0.03,0.3), yaxs="i", type="b", pch=5, col="blue")
-errbar(x=summaryStats$numplanets, y=summaryStats$mean, yminus=summaryStats$meanboot[,2], yplus=summaryStats$meanboot[,3], add=TRUE)
-points(summaryStats$numplanets, summaryStats$median, type="b", col="red", lty="longdash")
+# Plot of the mean plus uncertainty:
+plot(summaryStats$numplanets, summaryStats$mean, 
+     log  = "xy", 
+     xlab = "Number of planets", 
+     ylab = "Eccentricity", 
+     ylim = c(0.03,0.3), 
+     yaxs = "i", type="b", pch=5, col="blue")
+errbar(x      = summaryStats$numplanets, 
+       y      = summaryStats$mean, 
+       yminus = summaryStats$meanboot[,2], 
+       yplus  = summaryStats$meanboot[,3], 
+       add    = TRUE, 
+       errbar.col = "blue")
+
+# Plot of the median and uncertainty
+points(summaryStats$numplanets, summaryStats$median, 
+       type="b", col="red", lty="longdash")
+errbar(x      = summaryStats$numplanets, 
+       y      = summaryStats$median, 
+       yminus = summaryStats$median - summaryStats$oneThird, 
+       yplus  = summaryStats$median + summaryStats$twoThirds, 
+       add    = TRUE, 
+       errbar.col = "red")
+
 grid()
-legend(x=4.25, y=0.25,
+legend(x = 4.25, y = 0.25,
   legend = c("Mean Eccentricity", "Median Eccentricity"),
   lty    = c("solid","longdash"),
   col    = c("blue","red"),
@@ -136,6 +166,11 @@ legend(x=4.25, y=0.25,
   box.col=NA
 )
 title("Fig. 3: Mean and median RV eccentricity by multiplicity (number of planets)")
+
+#' 2-sample Kolmogorov-Smirnov test.
+#' 
+
+#' table 2
 
 #' References
 #' ----------
